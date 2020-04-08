@@ -10,10 +10,11 @@
 library(haven) # read spss files
 library(tidyverse) # dplyr and ggplot
 library(nnet) # multinom function
-library(broom) # test individual effects
 library(car) # Anova table on multinom object
+library(broom) # test individual effects
 library(MNLpred) # predicted values
 
+# read in Qualtrix survey responses
 df <- read_sav("survdata.sav")
 names(df)
 
@@ -31,7 +32,7 @@ mydata <- df %>% # select and compute variables of interest
   drop_na(OpinChange) %>%
   mutate(TotTrps = as.numeric(YrsVol) * as.numeric(Tpy)) 
 
-  lr <- mydata %>% # format variables for logistic regression
+ lr <- mydata %>% # format variables for logistic regression
   mutate(OpinChange = as.factor(OpinChange)) %>% 
   mutate(NumYrStart = as.numeric(YrStart)) %>%
   mutate(NumEvnts = as.numeric(Evnts)) %>% 
@@ -44,22 +45,22 @@ mydata <- df %>% # select and compute variables of interest
 # run full multinomial logistic regression model (all variables)
 # default reference category is 1 if y is based on numeric factors
 # therefore, reference category is Positive Change (in opinion)
-fullmod <- multinom(OpinChange~YrsSince+TotTrps+NumEvnts, 
+mymod <- multinom(OpinChange~YrsSince+TotTrps+NumEvnts, 
                data = lr,
                Hess = TRUE,
                na.action = na.exclude) 
 
 # test model fit
-fullGFT <- Anova(fullmod, type="II") # Anova table of likelihood ratio tests
-fullGFT
+lrt <- Anova(mymod, type="II") # Anova table of likelihood ratio tests
+lrt
 
 # individual effects
-tdytbl <- tidy(fullmod, conf.int = TRUE)
-tdytbl
+effects <- tidy(lrt, conf.int = TRUE)
+effects
 
-# predicted vals
+# predicted values
 # https://cran.r-project.org/web/packages/MNLpred/vignettes/OVA_Predictions_For_MNL.html
-pred1 <- mnl_pred_ova(model = fullmod,
+preds <- mnl_pred_ova(model = mymod,
                       data = lr,
                       xvari = "YrsSince",
                       by = 0.25,
@@ -74,20 +75,20 @@ OC_cat <- c(
   "2" = "No Change",
   "3" = "Negative Change")
 
-# determine how long before pred. prob. of pos. opin. change >= 50%
-y.50 <- which(pred1$plotdata[1:73,3] >= 0.50) # y vals >= 50%
+# determine how long before predicted probability of positive change in opinion >= 50%
+y.50 <- which(preds$plotdata[1:73,3] >= 0.50) # y vals >= 50%
 x.50 <- first(y.50) # index of x val where first y val >= 50%
-x.val <- pred1$plotdata[x.50,1] # coressponding x val
+x.val <- preds$plotdata[x.50,1] # coressponding x val
 
 # plot predicted probabilites across opin. change categories
-ggplot(data = pred1$plotdata, aes(x = YrsSince, y = mean,
+ggplot(data = preds$plotdata, aes(x = YrsSince, y = mean,
                                   ymin = lower, ymax = upper)) +
   geom_ribbon(alpha = 0.1) + # Confidence intervals
   geom_line() + # Mean
   facet_wrap(OpinChange ~.,
              labeller = labeller(OpinChange = OC_cat)) +
-  geom_segment(aes(x = 7.25, y = .5, xend = 0, yend = .5), linetype = "dashed",data = pred1$plotdata[1:73,])+
-  geom_segment(aes(x = 7.25, y = .5, xend = 7.25, yend = 0), linetype = "dashed",data = pred1$plotdata[1:73,])+
+  geom_segment(aes(x = 7.25, y = .5, xend = 0, yend = .5), linetype = "dashed",data = preds$plotdata[1:73,])+
+  geom_segment(aes(x = 7.25, y = .5, xend = 7.25, yend = 0), linetype = "dashed",data = preds$plotdata[1:73,])+
   
   scale_y_continuous(labels = percent_format(accuracy = 1)) + # % labels
   theme_bw() +
