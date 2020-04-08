@@ -8,4 +8,4 @@ Erica T. Jarvis(1), Allison Kellum(1), Jennifer A. Chiu(2), Grant T. Waltz(3), S
 
 (1)Scripps Institution of Oceanography, University of California San Diego, La Jolla, CA, USA
 (2)Fisheries and Conservation Biology, Moss Landing Marine Laboratories, Monterey, CA, USA
-(#)Biological Sciences, California Polytechnic State University, San Luis Obispo, CA, USA
+(3)Biological Sciences, California Polytechnic State University, San Luis Obispo, CA, USA
