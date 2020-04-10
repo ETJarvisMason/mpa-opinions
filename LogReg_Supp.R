@@ -5,7 +5,7 @@
 # Three measures of volunteer participation:
 # 1) Years since joining CCFRP,
 # 2) Number of sampling trips attended,
-# 3) Number of Volunteer Appreciation (Data) Workshop events.
+# 3) Number of Volunteer Appreciation and Data Workshops.
 
 library(haven) # read spss files
 library(tidyverse) # dplyr and ggplot
@@ -18,11 +18,17 @@ library(MNLpred) # predicted values
 df <- read_sav("survdata.sav")
 names(df)
 
-mydata <- df %>% # select and compute variables of interest
+# select and compute variables of interest:
+# YrStart = year respondent became a CCFRP volunteer
+# YrsVol = number of years respondent spent volunteering for CCFRP
+# Tpy = number of CCFRP sampling trips respondent reported going on per year
+# Evnts = number of Volunteer Angler Appreciation and Data Workshops respondent 
+# reported attending
+mydata <- df %>% 
   dplyr::select("Q1","Q2","Q3","Q6A", "Q11", "Q14_1","Q18_1") %>% 
   rename(YrStart = "Q1", YrsVol = "Q2", Tpy = "Q3", Evnts = "Q6A",
          Before = "Q14_1", After = "Q18_1") %>% 
-         drop_na(Before) %>% 
+  drop_na(Before) %>% 
   filter(Before > 0) %>% 
   mutate(Change = Before-After) %>%
   mutate(OpinChange = case_when(
@@ -32,7 +38,7 @@ mydata <- df %>% # select and compute variables of interest
   drop_na(OpinChange) %>%
   mutate(TotTrps = as.numeric(YrsVol) * as.numeric(Tpy)) 
 
- lr <- mydata %>% # format variables for logistic regression
+lr <- mydata %>% # format variables for logistic regression
   mutate(OpinChange = as.factor(OpinChange)) %>% 
   mutate(NumYrStart = as.numeric(YrStart)) %>%
   mutate(NumEvnts = as.numeric(Evnts)) %>% 
@@ -46,9 +52,9 @@ mydata <- df %>% # select and compute variables of interest
 # default reference category is 1 if y is based on numeric factors
 # therefore, reference category is Positive Change (in opinion)
 mymod <- multinom(OpinChange~YrsSince+TotTrps+NumEvnts, 
-               data = lr,
-               Hess = TRUE,
-               na.action = na.exclude) 
+                  data = lr,
+                  Hess = TRUE,
+                  na.action = na.exclude) 
 
 # test model fit
 lrt <- Anova(mymod, type="II") # Anova table of likelihood ratio tests
@@ -65,7 +71,7 @@ preds <- mnl_pred_ova(model = mymod,
                       xvari = "YrsSince",
                       by = 0.25,
                       seed = "525625", 
-                      nsim = 100, # faster than the default 1000
+                      nsim = 1000, # default
                       probs = c(0.025, 0.975)) # default
 
 # label opinion change categories
@@ -101,5 +107,3 @@ ggplot(data = preds$plotdata, aes(x = YrsSince, y = mean,
         panel.border = element_rect(colour = "black"))+
   labs(y = "Predicted probability",
        x = "Years since joining CCFRP")
-
-
