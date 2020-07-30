@@ -1,4 +1,4 @@
-# Analyses in Jarvis et al.,
+# Analyses in Mason et al.,
 # "Long-term Participation in Collaborative Fisheries Research Improves 
 #   Volunteer Angler Opinions on Marine Protected Area Performance" 
 
